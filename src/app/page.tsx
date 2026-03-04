@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { SearchInput } from "@/components/search-input";
 import { StepDisplay } from "@/components/step-display";
 import { ResearchReport } from "@/components/research-report";
+import { Sidebar } from "@/components/sidebar";
+import { useSession } from "@/hooks/use-session";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Moon, Sun, FlaskConical } from "lucide-react";
@@ -15,13 +17,56 @@ export default function Home() {
   const [searchKey, setSearchKey] = useState(0);
   const [readingMode, setReadingMode] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { messages, setMessages, sendMessage, status, error } = useChat();
 
+  const {
+    sessionId,
+    setSessionId,
+    sessions,
+    createSession,
+    updateSession,
+    loadSession,
+    removeSession,
+    fetchSessions,
+  } = useSession();
+
+  // Debounced auto-save
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const lastSavedRef = useRef<string>("");
+
   useEffect(() => {
-    const stored = localStorage.getItem("darkMode");
-    const isDark = stored === "true";
+    if (!sessionId || messages.length === 0) return;
+
+    const key = JSON.stringify({ messages, status });
+    if (key === lastSavedRef.current) return;
+
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      const sessionStatus =
+        status === "streaming" || status === "submitted"
+          ? "in-progress"
+          : "completed";
+      updateSession(sessionId, { messages, status: sessionStatus });
+      lastSavedRef.current = key;
+      // Refresh sidebar to update timestamps
+      fetchSessions();
+    }, 1000);
+
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [messages, status, sessionId, updateSession, fetchSessions]);
+
+  // Initialize dark mode and sidebar collapsed state from localStorage
+  useEffect(() => {
+    const storedDark = localStorage.getItem("darkMode");
+    const isDark = storedDark === "true";
     setDarkMode(isDark);
     document.documentElement.classList.toggle("dark", isDark);
+
+    const storedCollapsed = localStorage.getItem("sidebarCollapsed");
+    if (storedCollapsed === "true") setSidebarCollapsed(true);
   }, []);
 
   const toggleDarkMode = () => {
@@ -30,6 +75,14 @@ export default function Home() {
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("darkMode", String(next));
   };
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebarCollapsed", String(next));
+      return next;
+    });
+  }, []);
 
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -42,6 +95,12 @@ export default function Home() {
     setMessages([]);
     setReadingMode(false);
     setSearchKey((k) => k + 1);
+    lastSavedRef.current = "";
+
+    // Create session before sending message
+    const id = crypto.randomUUID();
+    await createSession(id, text);
+
     await sendMessage({ text });
   };
 
@@ -50,6 +109,29 @@ export default function Home() {
     setMessages([]);
     setReadingMode(false);
     setSearchKey((k) => k + 1);
+    setSessionId(null);
+    lastSavedRef.current = "";
+  };
+
+  const onSessionClick = async (id: string) => {
+    const session = await loadSession(id);
+    if (session) {
+      setTopic(session.topic);
+      setMessages(session.messages);
+      setReadingMode(false);
+      setSearchKey((k) => k + 1);
+      lastSavedRef.current = JSON.stringify({
+        messages: session.messages,
+        status: session.status,
+      });
+    }
+  };
+
+  const onDeleteSession = async (id: string) => {
+    await removeSession(id);
+    if (sessionId === id) {
+      onReset();
+    }
   };
 
   interface ToolStep {
@@ -96,10 +178,22 @@ export default function Home() {
   ).length;
   const totalEstimate = Math.max(completedSteps + inProgressSteps, 3);
 
+  const mainMargin = sidebarCollapsed ? "ml-12" : "ml-64";
+
   return (
     <div className="relative flex min-h-screen flex-col">
+      <Sidebar
+        sessions={sessions}
+        activeSessionId={sessionId}
+        onSessionClick={onSessionClick}
+        onNewResearch={onReset}
+        onDeleteSession={onDeleteSession}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
+      />
+
       {/* Top nav bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/60 bg-background/80 px-6 py-3 backdrop-blur-md">
+      <header className={`sticky top-0 z-20 flex items-center justify-between border-b border-border/60 bg-background/80 px-6 py-3 backdrop-blur-md transition-all duration-300 ${mainMargin}`}>
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <FlaskConical className="h-4 w-4 text-primary" />
@@ -135,7 +229,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 flex flex-1 flex-col items-center px-6">
+      <main className={`relative z-10 flex flex-1 flex-col items-center px-6 transition-all duration-300 ${mainMargin}`}>
         {/* Hero / Search area */}
         {!readingMode && (
           <div
