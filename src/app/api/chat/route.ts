@@ -89,7 +89,9 @@ List all sources used as numbered references with clickable links:
 Important guidelines:
 - Always search before answering — never rely on prior knowledge alone
 - Execute multiple searches to cover the topic thoroughly
-- Cite specific sources for every claim
+- Cite specific sources for every claim using markdown link syntax: [Source Title](https://actual-url.com)
+- For ALL inline citations in Key Findings, always use clickable markdown links: [The Verge](https://theverge.com/article), never plain text citations
+- In the Sources section, every source MUST be a clickable markdown link: [Title](url)
 - Be objective and present multiple perspectives where they exist
 - If sources conflict, note the disagreement
 - Focus on recent and authoritative sources`;

@@ -103,3 +103,43 @@ Show small domain favicons next to each source in the step cards (use `https://w
 **Files:** `src/app/page.tsx`
 
 On mobile, the search input scrolls away once you're in the report. Make it sticky at the top on small screens (`sticky top-0 z-10` with a background) so users can start a new search anytime without scrolling back up.
+
+---
+
+## UX Enhancements (Added 2026-03-04)
+
+### 16. Research templates
+**Effort:** Medium
+**Files:** `src/components/search-input.tsx`, `src/app/api/chat/route.ts`, `src/app/page.tsx`
+
+Pre-built starting points like "Product comparison", "Literature review", "Pros & cons analysis", "How does X work?" that adjust the system prompt and report structure. Show as clickable chips below the search bar on the idle screen. Each template modifies the system prompt to shape the output format (e.g., comparison table, structured argument, explainer with diagrams).
+
+### 17. Highlighted key stats callout
+**Effort:** Small-Medium
+**Files:** `src/components/research-report.tsx`, `src/app/api/chat/route.ts`
+
+Pull out key numbers, dates, and percentages into a visual callout box at the top of the report for quick scanning. Either instruct the model to output a "Key Stats" section in a specific format, or parse the report markdown post-hoc to extract numeric claims. Display as a row of cards above the main report body.
+
+### 18. Report annotations / highlights
+**Effort:** Medium
+**Files:** New component + `src/components/research-report.tsx`, `src/app/page.tsx`
+
+Let users highlight text and add personal notes on sections of the report. Store annotations in localStorage keyed by report content hash. Show highlights with a colored background and note icons. Pairs well with research history (#3) — annotations persist when revisiting old reports.
+
+### 19. Suggested follow-up topics
+**Effort:** Small-Medium
+**Files:** `src/app/api/chat/route.ts`, `src/app/page.tsx`
+
+After the report renders, show 3-4 clickable "Related topics" chips (e.g., after researching "solid-state batteries" suggest "lithium supply chain", "EV market trends", "QuantumScape vs Toyota"). Instruct the model to output these at the end of the report in a parseable format. Clicking one starts a new research session.
+
+### 20. Reading mode / focus view
+**Effort:** Small
+**Files:** `src/app/page.tsx`, `src/components/research-report.tsx`
+
+A toggle that hides the search steps and expands the report to full width for distraction-free reading. Useful for longer reports. Could also bump up font size slightly and add more whitespace. Simple CSS/state toggle.
+
+### 21. Report section ratings
+**Effort:** Medium
+**Files:** New component + `src/components/research-report.tsx`
+
+Let users rate individual sections of the report (thumbs up/down or 1-5 stars). Helps track which parts of the research were most useful. Could store ratings alongside annotations in localStorage and potentially feed back into prompt tuning over time.
