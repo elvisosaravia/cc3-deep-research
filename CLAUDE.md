@@ -8,21 +8,20 @@ This repository contains "Claude Code for Everyone" — a collection of projects
 
 ## Commands
 
-All commands run from the `deep-research/` directory:
+All commands run from the project root:
 
 ```bash
-cd deep-research
 npm run dev -- -p 3001  # Start dev server at localhost:3001
-npm run build    # Production build
-npm run start    # Start production server
-npm run lint     # Run ESLint
+npm run build           # Production build
+npm run start           # Start production server
+npm run lint            # Run ESLint
 ```
 
 No test framework is configured.
 
 ## Architecture
 
-### deep-research/ — Next.js App (App Router)
+### Next.js App (App Router) — Root Directory
 
 A streaming AI research application. Users enter a topic, the AI breaks it into search queries, executes web searches, and produces a structured markdown report.
 
@@ -44,7 +43,7 @@ A streaming AI research application. Users enter a topic, the AI breaks it into 
 
 **Tech stack:**
 - Next.js 16 + React 19 + TypeScript
-- Vercel AI SDK (`ai`, `@ai-sdk/react`) for streaming and tool use
+- Vercel AI SDK (`ai` v6, `@ai-sdk/react`) for streaming and tool use
 - OpenRouter provider (`@openrouter/ai-sdk-provider`) → Gemini 3 Flash model
 - Exa API for web search (called directly via fetch in the tool definition)
 - Tailwind CSS v4 + shadcn/ui (New York style) + Tailwind Typography plugin
@@ -54,6 +53,13 @@ A streaming AI research application. Users enter a topic, the AI breaks it into 
 - `OPENROUTER_API_KEY` — OpenRouter API key for LLM access
 - `EXA_API_KEY` — Exa search API key
 
-### .claude/skills/deep-research-baseline/ — Claude Code Skill
+### .claude/skills/ — Claude Code Skills
 
-A custom skill that Claude Code can invoke (via `/deep-research-baseline`) to conduct structured web research directly in the CLI. Uses a 5-phase workflow: query clarification → search → fetch/extract → analyze/synthesize → report. Includes source evaluation templates with credibility tiers.
+**deep-research-baseline/** — A custom skill (invoked via `/deep-research-baseline`) that conducts structured web research directly in the CLI. Uses a 5-phase workflow: query clarification → search → fetch/extract → analyze/synthesize → report. Includes source evaluation templates with credibility tiers.
+
+**benchmark-research/** — A comparative benchmarking skill (invoked via `/benchmark-research`) that runs randomized queries through both the Next.js app and the baseline skill, scores outputs on 5 axes (Coherence, Structure, Depth, Citations, Style), and generates assessment reports in `logs/`.
+
+### Other Directories
+
+- `ideas/feature-ideas.md` — Planned feature improvements and fixes
+- `logs/` — Auto-generated benchmark test results
